@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 //4字节的消息总长度
 //4字节的消息类型标识号
@@ -23,26 +24,17 @@ public class Request {
       throw new IllegalArgumentException("长度错误");
     }
   }
-
   public byte[] Serialization() {
-    ByteArrayOutputStream res = new ByteArrayOutputStream(len);
-    try {
-      res.write(new Uint32(len).getByteArray());
-      res.write(new Uint32(tag).getByteArray());
-      int usernameLen = username.length();
-      int passwordLen = password.length();
-      for (int i = 0; i < 20 - usernameLen; i++) {
-        res.write(0x00);
-      }
-      res.write(username.getBytes());
-      for (int i = 0; i < 30 - passwordLen; i++) {
-        res.write(0x00);
-      }
-      res.write(password.getBytes());
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    return res.toByteArray();
+    byte[] lenbuffer = ByteBuffer.allocate(4).putInt(len).array();
+    byte[] tagbuffer = ByteBuffer.allocate(4).putInt(tag).array();
+    byte[] username = ByteBuffer.allocate(20).put(this.username.getBytes()).array();
+    byte[] password = ByteBuffer.allocate(30).put(this.password.getBytes()).array();
+    ByteBuffer buffer = ByteBuffer.allocate(58);
+    buffer.put(lenbuffer);
+    buffer.put(tagbuffer);
+    buffer.put(username);
+    buffer.put(password);
+    return buffer.array();
   }
   public static void main(String[] args) {
     Request req = new Request(1, "zhuangjinjun", "123456");

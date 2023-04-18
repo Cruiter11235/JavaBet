@@ -1,4 +1,6 @@
 import java.io.ByteArrayOutputStream;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 
 //4字节长度
 //4字节tag
@@ -17,20 +19,16 @@ public class Response {
   }
 
   public byte[] Serialization() {
-    ByteArrayOutputStream res = new ByteArrayOutputStream();
-    byte[] msgbytes = msg.getBytes();
-    try {
-      res.write(new Uint32(len).getByteArray());
-      res.write(new Uint32(tag).getByteArray());
-      res.write(status);
-      for (int i = 0; i < 64 - msgbytes.length; i++) {
-        res.write(0x00);
-      }
-      res.write(msgbytes);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return res.toByteArray();
+    byte[] lenbuffer = ByteBuffer.allocate(4).putInt(len).array();
+    byte[] tagbuffer = ByteBuffer.allocate(4).putInt(tag).array();
+    byte[] statusbuffer = ByteBuffer.allocate(1).put((byte)status).array();
+    byte[] desc = ByteBuffer.allocate(64).put(msg.getBytes()).array();
+    ByteBuffer buffer = ByteBuffer.allocate(73);
+    buffer.put(lenbuffer);
+    buffer.put(tagbuffer);
+    buffer.put(statusbuffer);
+    buffer.put(desc);
+    return buffer.array();
   }
 
   public static void main(String[] args) {
