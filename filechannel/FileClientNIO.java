@@ -1,0 +1,55 @@
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
+public class FileClientNIO {
+    public static void main(String[] args) throws IOException {
+        String serverAddress = "192.168.1.102"; // 服务器地址
+        int port = 8080; // 服务器端口号
+        String filePath = "FileClient"; // 待传输的文件路径
+        int bufferSize = 4096; // 缓冲区大小
+        byte[] buffer = new byte[bufferSize]; // 缓冲区
+
+        Socket socket = new Socket(serverAddress, port);
+        System.out.println("Connected to server at " + serverAddress + ":" + port);
+
+        // 读取文件并分块发送
+        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filePath));
+        OutputStream outputStream = socket.getOutputStream();
+
+        // 发送文件名和文件大小
+        byte[] fileNameBytes = filePath.getBytes(StandardCharsets.UTF_8);
+        byte[] fileNameSizeBytes = ByteBuffer.allocate(8).putLong(fileNameBytes.length).array();
+        outputStream.write(fileNameSizeBytes);
+        outputStream.write(fileNameBytes);
+        // 总字节数
+        File file = new File(filePath);
+        long fileSize = file.length();
+        // 总字节数转化为bytes
+        byte[] fileSizeBytes = ByteBuffer.allocate(8).putLong(fileSize).array();
+        outputStream.write(fileSizeBytes);
+
+        System.out.println("Sending file: " + filePath + ", size: " + fileSize + " bytes");
+
+        // 分块传输文件
+        long remainingBytes = fileSize;
+        while (remainingBytes > 0) {
+            int bytesRead = bis.read(buffer, 0, (int) Math.min(bufferSize, remainingBytes));
+            if (bytesRead < 0) {
+                break;
+            }
+            outputStream.write(buffer, 0, bytesRead);
+            remainingBytes -= bytesRead;
+        }
+
+        bis.close();
+        socket.close();
+
+        System.out.println("File " + filePath + " sent to server");
+    }
+}
