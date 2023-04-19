@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class MyServer {
     class DataCache {
@@ -69,7 +71,7 @@ public class MyServer {
 
                     String line = null;
                     while ((line = reader.readLine()) != null) {
-                        System.out.println(line); // 这里可以对每行数据进行处理，例如将其存入一个 List 中
+                        // System.out.println(line); 
                         String[] parts = line.split("\\,");
                         if (parts[0].equals(name)) {
                             ok = false;
@@ -118,6 +120,9 @@ public class MyServer {
         // 返回一个信号量指示操作是否完成
         // 涉及到读写文件操作，需要保证线程安全
         boolean handledataset(int tag, String username, String passwd) {
+        
+            byte[] hashbytes = HashingExample.getSHA256Hash(passwd);
+            passwd = HashingExample.bytesToHex(hashbytes);
             boolean ok = false;
             System.out.println("username: " + username + " " + "passwd: " + passwd);
             if (tag == 1) {
